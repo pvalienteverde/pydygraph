@@ -10,6 +10,8 @@ from string import Template #https://docs.python.org/2/library/stdtypes.html#str
 import pandas as pd
 import json
 from templates_html import templates_html
+from templates_html import axesXHTML
+import re
     
 class DygraphChart(templates_html):
     
@@ -26,6 +28,7 @@ class DygraphChart(templates_html):
         self.__visibilidad__={}
         self.__estilos_css_a_inclustar__=[]      # Ayuda: http://www.w3schools.com/css/default.asp    
         self.__atributos_charts__={}
+        self.__funciones_charts__={}
         
         self.__atributos_charts_default__={'width':'100%',
                                            'height':'400px'}
@@ -71,7 +74,7 @@ class DygraphChart(templates_html):
         if kwargs.has_key('nombre_fichero'):
             kwargs['tipo_datos']='"'+kwargs['nombre_fichero']+'"'
         elif kwargs.has_key('dataframe'):
-            kwargs['tipo_datos']=self.pd2str(kwargs['dataframe'])
+            kwargs['tipo_datos']=self.pd2str(kwargs['dataframe'],index_timestamp=(type(kwargs['dataframe'].index[0]) is pd.tslib.Timestamp))
             opciones_usuario['labels']='["Indice","'+'","'.join(kwargs['dataframe'].columns.values)+'"]'
         else:
             raise AssertionError("Se necesita alguna fuente de datos")              
@@ -92,6 +95,7 @@ class DygraphChart(templates_html):
         self.__datos_charts__[kwargs['idc']]=kwargs['tipo_datos']
         self.__opciones_charts__[kwargs['idc']]=opciones_usuario
         self.__atributos_charts__[kwargs['idc']]=atributos_usuarios
+        self.__funciones_charts__[kwargs['idc']]=str.join("\n",kwargs.get('fun_java_script',[''])) # Se añade funciones que se tienen que incrustar
         # Generamos la opcion de chequear la visibilidad, por ahora solamente para asincronos
         self.__visibilidad__[kwargs['idc']]=kwargs.get('anadir_opc_visibilidad',True) 
             
@@ -116,6 +120,7 @@ class DygraphChart(templates_html):
         cuerpo_charts_asin = Template(self.__template_chart_asincrono__) 
         js_asincrono=''
         js_opc_visibilidad=''
+        js_funciones_java_script='';
         for id_manejador in self.__charts_no_sincronizados__:
             id_interno_charts="asin_"+id_manejador
             js_asincrono += cuerpo_charts_asin.substitute(id_interno=id_interno_charts,
@@ -127,7 +132,9 @@ class DygraphChart(templates_html):
                 cuerpo_opc_visibilidad = Template(self.__template_opc_visibilidad__)
                 js_opc_visibilidad += cuerpo_opc_visibilidad.substitute(id_interno_asin=id_interno_charts,
                                                                         id_interno=id_manejador)
-        script_asincrono=cuerpo_js.substitute(charts=js_asincrono+js_opc_visibilidad)        
+                                                                        
+            js_funciones_java_script+=self.__funciones_charts__[id_manejador]                                                       
+        script_asincrono=cuerpo_js.substitute(charts=js_asincrono+js_opc_visibilidad,funciones_script=js_funciones_java_script)        
         
         
         
@@ -135,6 +142,7 @@ class DygraphChart(templates_html):
         # AHora los que están sincronizados, se generarán por grupos
         cuerpo_charts_sin_push = Template(self.__template_push_sincrono__)
         script_sincrono=''
+        js_funciones_java_script='';
         for id_grupo_manejador in self.__charts_sincronizados__:
             js_sincrono=id_grupo_manejador+''' = [];
             var blockRedraw = false;
@@ -156,10 +164,12 @@ class DygraphChart(templates_html):
                     js_opc_visibilidad += cuerpo_opc_visibilidad.substitute(id_interno_asin=id_interno_charts,
                                                                             id_interno=id_manejador)
                 js_sincrono+=cuerpo_charts_sin_push.substitute(id_interno=id_interno_charts,
-                                                               id_grupo=id_grupo_manejador)                                                            
+                                                               id_grupo=id_grupo_manejador) 
+                                                               
+                js_funciones_java_script+=self.__funciones_charts__[id_manejador]                                               
            #Lo relleno                                                                            
             script_sincrono_charts=js_sincrono+js_opc_visibilidad                                                           
-            script_sincrono+=cuerpo_js.substitute(charts=script_sincrono_charts+script_sincrono_charts)
+            script_sincrono+=cuerpo_js.substitute(charts=script_sincrono_charts+script_sincrono_charts,funciones_script=js_funciones_java_script)
         
         
         return script_asincrono+script_sincrono
@@ -214,23 +224,34 @@ class DygraphChart(templates_html):
         cuerpo_html = Template(self.__template_html__)
         return cuerpo_html.substitute(css=self.buildCSS(),contenedor=self.__contenedor__,js=self.buildJs())
     
-    def pd2str(self,dataframe):
+    def pd2str(self,dataframe,index_timestamp=True):
         
         """
         Convierte dataframe al tipo requerido, EL indice debe de ser una fecha
         """
-        template_datos="""[new Date("$indice"),$datos],\n"""
-        str_data='['        
-        cuerpo = Template(template_datos)
-        for index_date, datos_brutos in zip(pd.to_datetime(dataframe.index.values), dataframe.get_values()):
-            str_data += cuerpo.substitute(indice=index_date.strftime('%Y/%m/%d %H:%M:%S'),datos=','.join(map(str, datos_brutos)).replace('nan','NaN'))
-        
-        str_data+=']'
+        if index_timestamp is True:
+            template_datos="""[new Date("$indice"),$datos],\n"""
+            str_data='['        
+            cuerpo = Template(template_datos)
+            for index_date, datos_brutos in zip(pd.to_datetime(dataframe.index.values), dataframe.get_values()):
+                str_data += cuerpo.substitute(indice=index_date.strftime('%Y/%m/%d %H:%M:%S'),datos=','.join(map(str, datos_brutos)).replace('nan','NaN'))
+            
+            str_data+=']'
+        else:
+            template_datos="""[$indice,$datos],\n"""
+            str_data='['        
+            cuerpo = Template(template_datos)
+            for index_date, datos_brutos in zip(dataframe.index.values, dataframe.get_values()):
+                str_data += cuerpo.substitute(indice=index_date,datos=','.join(map(str, datos_brutos)).replace('nan','NaN'))            
+            str_data+=']'
+            
         return str_data
-     
+        
     
     def dictOpciones2str(self,diccionario):
-        return str(diccionario).replace("'",'').replace('{','').replace('}','')
+        regex = re.compile("^{(.*)}$") # Quitamos corchetes de inicio y fin
+        opciones=regex.search(str(diccionario)).groups()[0]
+        return opciones.replace("'",'').replace('u["','["')
     
     def dictAtributos2str(self,diccionario):
         return json.dumps(diccionario).replace('{','').replace('}','').replace('"','').replace(',',';')
