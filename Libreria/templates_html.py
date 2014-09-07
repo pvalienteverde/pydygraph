@@ -38,20 +38,22 @@ class templates_html(object):
     __template_js__="""
 <script type="text/javascript">
     $charts
+    $funciones_script
 </script>
 """
+
 
     __template_html__="""
 <html>
 <head>
 
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="/home/pedro/workspacePython/pydygraph/style.css">
 <style type="text/css">
     $css
 </style>
 
 <script type="text/javascript"
-    src="dygraph-combined.js"></script>
+    src="/home/pedro/workspacePython/pydygraph/dygraph-combined.js"></script>
 </head>
 <body>
 
@@ -78,3 +80,27 @@ $js
     <label for="$id_num_curva"> $descriptor_curva </label>
 """
     
+    
+class axesXHTML(object):
+        
+    
+    opcion_axes_x_numero={
+        'axes':"""{x:{axisLabelFormatter:function(x){return continuo2Time(x)},valueFormatter: function(x){return continuo2Time(x)},},}"""
+    }
+
+    funcion_axes_x_numero="""
+    function continuo2Time(x) {
+							var dias_aviles=parseInt(x/30600);
+							var dias_totales=dias_aviles+parseInt(dias_aviles/5)*2;
+							var segundo_unix=dias_totales*86400+x%30600+1388966400+7*3600;
+							var a = new Date(segundo_unix*1000);
+							var year = a.getFullYear();
+							 var month = a.getMonth();
+							 var date = a.getDate();
+							 var hour = a.getHours();
+							 var min = a.getMinutes();
+							 var sec = a.getSeconds();
+							 var time_str = year+'/'+month+'/'+date+' '+hour+':'+min+':'+sec;
+							 return time_str;
+                        }
+    """
