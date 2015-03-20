@@ -67,8 +67,14 @@ html.addSerie("<p class='texto_centrado_negrita'>Grupo 2, DA_DEMD</p>",
               dataframe=var_exp_demanda[['DA_DEMD']],
               opciones={'showRangeSelector': 'false', 'showRoller': 'true'},
               sincronizar='grupo2')
+              
+              
+# Mas tipos de opciones
+"""
+opciones_grafico_02 = {'ylabel': "'Potencia (KW)'","colors": '["#303030", "#0099ff", "#ee2c2c", "#aa2c2c"]','observacion': "{ strokeWidth: 2,highlightCircleSize: 2}",
+                       'valueRange': '[0,' + str(df_total.max().max() * 1.1) + ']',
+                       }
+"""
 
 # Guardado del HTML generado
-output_file = open('curvas_produccion_dy.html', 'w')
-output_file.write(html.buildHTML())
-output_file.close()
+html.plotHTML('curvas_produccion_dy.html')
