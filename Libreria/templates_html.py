@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 
-class templates_html(object):    
-    __template_chart_asincrono__="""
+class templates_html(object):
+    __template_chart_asincrono__ = """
       $id_interno = new Dygraph(
           document.getElementById("$idc"),
           $tipo_datos,
@@ -11,8 +11,8 @@ class templates_html(object):
             }
       );
 """
-    
-    __more_opciones_sincrono__="""
+
+    __more_opciones_sincrono__ = """
             ,drawCallback: function(me, initial) {
                 if (blockRedraw || initial) return;
                 blockRedraw = true;
@@ -27,33 +27,32 @@ class templates_html(object):
                 }
                 blockRedraw = false;
             }
-"""    
-    
-    __template_push_sincrono__="""
+"""
+
+    __template_push_sincrono__ = """
         $id_grupo.push(
           $id_interno
         );
-"""    
-    
-    __template_js__="""
+"""
+
+    __template_js__ = """
 <script type="text/javascript">
     $charts
     $funciones_script
 </script>
 """
 
-
-    __template_html__="""
+    __template_html__ = """
 <html>
 <head>
 
-<link rel="stylesheet" href="/home/pedro/workspacePython/pydygraph/style.css">
+<link rel="stylesheet" href="/home/pedro.valiente/dygrahp/style.css">
 <style type="text/css">
     $css
 </style>
 
 <script type="text/javascript"
-    src="/home/pedro/workspacePython/pydygraph/dygraph-combined.js"></script>
+    src="/home/pedro.valiente/dygrahp/dygraph-combined.js"></script>
 </head>
 <body>
 
@@ -65,30 +64,29 @@ $js
 </html>    
 """
 
-    __template_cuerpo_interno__="""
+    __template_cuerpo_interno__ = """
 <div id="$idc" style="$atributos"></div>
 """
 
-    __template_opc_visibilidad__="""
+    __template_opc_visibilidad__ = """
     function change_$id_interno(el) {
         $id_interno_asin.setVisibility(parseInt(el.id), el.checked);
     }
 """
 
-    __template_label_visibilidad__="""
+    __template_label_visibilidad__ = """
     <input type=checkbox id="$id_num_curva" checked onClick="change_$id_interno(this)">
     <label for="$id_num_curva"> $descriptor_curva </label>
 """
-    
-    
+
+
 class axesXHTML(object):
-        
-    
-    opcion_axes_x_numero={
-        'axes':"""{x:{axisLabelFormatter:function(x){return continuo2Time(x)},valueFormatter: function(x){return continuo2Time(x)},},}"""
+
+    opcion_axes_x_numero = {
+        'axes': """{x:{axisLabelFormatter:function(x){return continuo2Time(x)},valueFormatter: function(x){return continuo2Time(x)},},}"""
     }
 
-    funcion_axes_x_numero="""
+    funcion_axes_x_numero = """
     function continuo2Time(x) {
 							var dias_aviles=parseInt(x/30600);
 							var dias_totales=dias_aviles+parseInt(dias_aviles/5)*2;
