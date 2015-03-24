@@ -236,7 +236,30 @@ class DygraphChart(templates_html):
         cuerpo_html = Template(self.__template_html__)
         return cuerpo_html.substitute(css=self.buildCSS(), contenedor=self.__contenedor__, js=self.buildJs())
         
+    @staticmethod
+    def _in_ipynb():
+        try:
+            from IPython import get_ipython
+            cfg = get_ipython().config 
+            if cfg['IPKernelApp']['parent_appname'] == 'ipython-notebook':
+                return True
+            else:
+                return False
+        except NameError:
+            return False 
+    
+    def plotIPython(self):
+        """
+        plotear del HTML
+        """
+        cuerpo_html = Template(self.__template_html__)
+        todo_html = cuerpo_html.substitute(css=self.buildCSS(), contenedor=self.__contenedor__, js=self.buildJs())
         
+        
+        if (self._in_ipynb()):
+            from IPython.display import display,HTML
+            return display(HTML(todo_html))
+       
     def plotHTML(self,nombre_fichero='temp.thml'):
         """
         plotear del HTML

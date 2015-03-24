@@ -52,7 +52,7 @@ class templates_html(object):
 </style>
 
 <script type="text/javascript"
-    src="/home/pedro.valiente/dygrahp/dygraph-combined.js"></script>
+    src="http://dygraphs.com/1.1.0/dygraph-combined.js"></script>
 </head>
 <body>
 
@@ -88,17 +88,17 @@ class axesXHTML(object):
 
     funcion_axes_x_numero = """
     function continuo2Time(x) {
-							var dias_aviles=parseInt(x/30600);
-							var dias_totales=dias_aviles+parseInt(dias_aviles/5)*2;
-							var segundo_unix=dias_totales*86400+x%30600+1388966400+7*3600;
-							var a = new Date(segundo_unix*1000);
-							var year = a.getFullYear();
-							 var month = a.getMonth();
-							 var date = a.getDate();
-							 var hour = a.getHours();
-							 var min = a.getMinutes();
-							 var sec = a.getSeconds();
-							 var time_str = year+'/'+month+'/'+date+' '+hour+':'+min+':'+sec;
-							 return time_str;
+                            var dias_aviles=parseInt(x/30600);
+                            var dias_totales=dias_aviles+parseInt(dias_aviles/5)*2;
+                            var segundo_unix=dias_totales*86400+x%30600+1388966400+7*3600;
+                            var a = new Date(segundo_unix*1000);
+                            var year = a.getFullYear();
+                             var month = a.getMonth();
+                             var date = a.getDate();
+                             var hour = a.getHours();
+                             var min = a.getMinutes();
+                             var sec = a.getSeconds();
+                             var time_str = year+'/'+month+'/'+date+' '+hour+':'+min+':'+sec;
+                             return time_str;
                         }
     """

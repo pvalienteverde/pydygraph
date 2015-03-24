@@ -77,4 +77,5 @@ opciones_grafico_02 = {'ylabel': "'Potencia (KW)'","colors": '["#303030", "#0099
 """
 
 # Guardado del HTML generado
-html.plotHTML('curvas_produccion_dy.html')
+# html.plotHTML('curvas_produccion_dy.html')
+
