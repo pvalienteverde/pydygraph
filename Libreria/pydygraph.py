@@ -14,6 +14,9 @@ from templates_html import templates_html
 from templates_html import axesXHTML
 import re
 import webbrowser
+import numpy as np
+import tempfile
+import time
 
 
 class DygraphChart(templates_html):
@@ -252,59 +255,55 @@ class DygraphChart(templates_html):
         """
         plotear del HTML
         """
-        cuerpo_html = Template(self.__template_html__)
-        todo_html = cuerpo_html.substitute(css=self.buildCSS(), contenedor=self.__contenedor__, js=self.buildJs())
-        
+        todo_html = self.buildHTML()         
         
         if (self._in_ipynb()):
             from IPython.display import display,HTML
             return display(HTML(todo_html))
-       
-    def plotHTML(self,nombre_fichero='temp.thml'):
+        
+        
+    def plotHTML(self,nombre_fichero=None):
         """
-        plotear del HTML
+        plotear del HTML, sino se le pasa el nombre, se crea un fichero temporal
         """
-        cuerpo_html = Template(self.__template_html__)
-        todo_html = cuerpo_html.substitute(css=self.buildCSS(), contenedor=self.__contenedor__, js=self.buildJs())
+        todo_html = self.buildHTML() 
+            
+        fichero = tempfile.NamedTemporaryFile(delete=True,prefix='pydygraph_') if (nombre_fichero is None) else open(nombre_fichero, 'w')    
         
+        fichero.write(todo_html)              
         
-        output_file = open(nombre_fichero, 'w')
-        output_file.write(todo_html)
-        output_file.close()
+        webbrowser.open_new_tab(fichero.name)
         
-        webbrowser.open(nombre_fichero, new=0, autoraise=1)
+        time.sleep(0.5);#Para que no se borre antes de abrirlo        
+        
+        fichero.close()    
 
     def pd2str(self, dataframe, index_timestamp=True):
         """
         Convierte dataframe al tipo requerido, EL indice debe de ser una fecha
         """
-        if index_timestamp is True:
-            template_datos = """[new Date("$indice"),$datos],\n"""
-            str_data = '['
-            cuerpo = Template(template_datos)
-            for index_date, datos_brutos in zip(pd.to_datetime(dataframe.index.values), dataframe.get_values()):
-                str_data += cuerpo.substitute(indice=index_date.strftime(
-                    '%Y/%m/%d %H:%M:%S'), datos=','.join(map(str, datos_brutos)).replace('nan', 'NaN'))
+        indice_fechas= pd.to_datetime(dataframe.index).map(lambda fecha : 'new Date("{}")'.format(fecha.strftime('%Y/%m/%d %H:%M:%S'))) if index_timestamp else dataframe.index.values
+        datos=np.column_stack((indice_fechas,dataframe.get_values()))
+        
+        #np.apply_along_axis(lambda fila: "[{}],".format(','.join(map(str,fila))).replace('nan', 'NaN'),1,a)            
+        str_data = '['
+        for linea_de_datos in datos:
+            str_data += "[{}],\n".format(','.join(map(str,linea_de_datos))).replace('nan', 'NaN')
 
-            str_data += ']'
-        else:
-            template_datos = """[$indice,$datos],\n"""
-            str_data = '['
-            cuerpo = Template(template_datos)
-            for index_date, datos_brutos in zip(dataframe.index.values, dataframe.get_values()):
-                str_data += cuerpo.substitute(
-                    indice=index_date, datos=','.join(map(str, datos_brutos)).replace('nan', 'NaN'))
-            str_data += ']'
+        str_data += ']'
 
-        return str_data
+        return  str_data
+
 
     def dictOpciones2str(self, diccionario):
         regex = re.compile("^{(.*)}$")  # Quitamos corchetes de inicio y fin
         opciones = regex.search(str(diccionario)).groups()[0]
-        return opciones.replace("'", '').replace('u["', '["')
+        resultado=opciones.replace("'", '').replace('u["', '["')
+        return resultado
 
     def dictAtributos2str(self, diccionario):
-        return json.dumps(diccionario).replace('{', '').replace('}', '').replace('"', '').replace(',', ';')
+        resultado= json.dumps(diccionario).replace('{', '').replace('}', '').replace('"', '').replace(',', ';')
+        return resultado
 
 ''' Diferentes utilies para pandas:'''
 # Ayuda a unir de diferentes diccionarios, el valor de un mismo resultado
