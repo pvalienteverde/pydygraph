@@ -46,7 +46,7 @@ class templates_html(object):
 <html>
 <head>
 
-<link rel="stylesheet" href="/home/pedro.valiente/dygrahp/style.css">
+<link rel="stylesheet" href="/home/pedro.valiente/workspacePython/pydygraph/Ejemplos/style.css">
 <style type="text/css">
     $css
 </style>

@@ -4,6 +4,11 @@ import pydygraph as pydy
 import pandas as pd
 from datetime import datetime
 
+import os
+abspath = os.path.abspath(__file__)
+dname = os.path.dirname(abspath)
+os.chdir(dname)
+
 # Procesando Pandas
 produccion = pd.read_csv("potencias.csv", sep=",", index_col=[
                          "Fecha"], parse_dates=True, dtype={'Fecha': datetime})

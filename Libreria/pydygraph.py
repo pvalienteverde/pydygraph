@@ -67,22 +67,22 @@ class DygraphChart(templates_html):
         # Introducimos valores por defecto
 
         opciones_usuario = self.__opciones_charts_default__.copy()
-        if kwargs.has_key('opciones'):
+        if 'opciones' in kwargs:
             opciones_usuario = dict(
-                opciones_usuario.items() + kwargs['opciones'].copy().items())
+                opciones_usuario.items() | kwargs['opciones'].copy().items())
 
         atributos_usuarios = self.__atributos_charts_default__.copy()
-        if kwargs.has_key('atributos'):
+        if 'atributos' in kwargs:
             atributos_usuarios = dict(
-                atributos_usuarios.items() + kwargs['atributos'].copy().items())
+                atributos_usuarios.items() | kwargs['atributos'].copy().items())
 
-        if kwargs.has_key('nombre_fichero') and kwargs.has_key('dataframe'):
+        if 'nombre_fichero' in kwargs and 'dataframe' in kwargs:
             raise AssertionError(
                 "No se puede utilizar el argumento nombre_fichero y dataframe a la vez")
 
-        if kwargs.has_key('nombre_fichero'):
+        if 'nombre_fichero' in kwargs:
             kwargs['tipo_datos'] = '"' + kwargs['nombre_fichero'] + '"'
-        elif kwargs.has_key('dataframe'):
+        elif 'dataframe' in kwargs:
             kwargs['tipo_datos'] = self.pd2str(kwargs['dataframe'], index_timestamp=(
                 type(kwargs['dataframe'].index[0]) is pd.tslib.Timestamp))
             opciones_usuario[
@@ -91,9 +91,9 @@ class DygraphChart(templates_html):
             raise AssertionError("Se necesita alguna fuente de datos")
 
         # Creamos los grupos de sincronizacion o no
-        if kwargs.has_key('sincronizar'):
+        if 'sincronizar' in kwargs:
             # GUardamos en cada grupo de sincronizacion
-            if self.__charts_sincronizados__.has_key(kwargs['sincronizar']):
+            if kwargs['sincronizar'] in self.__charts_sincronizados__:
                 self.__charts_sincronizados__[
                     kwargs['sincronizar']].append(kwargs['idc'])
             else:
@@ -270,11 +270,11 @@ class DygraphChart(templates_html):
             
         fichero = tempfile.NamedTemporaryFile(delete=True,prefix='pydygraph_') if (nombre_fichero is None) else open(nombre_fichero, 'w')    
         
-        fichero.write(todo_html)              
+        fichero.write(todo_html.encode('utf-8'))              
         
         webbrowser.open_new_tab(fichero.name)
         
-        time.sleep(0.5);#Para que no se borre antes de abrirlo        
+        time.sleep(1);#Para que no se borre antes de abrirlo        
         
         fichero.close()    
 
