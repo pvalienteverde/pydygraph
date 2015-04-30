@@ -3,6 +3,7 @@
 import pydygraph as pydy
 import pandas as pd
 from datetime import datetime
+import numpy as np
 
 import os
 abspath = os.path.abspath(__file__)
@@ -72,9 +73,15 @@ html.addSerie("<p class='texto_centrado_negrita'>Grupo 2, DA_DEMD</p>",
               dataframe=var_exp_demanda[['DA_DEMD']],
               opciones={'showRangeSelector': 'false', 'showRoller': 'true'},
               sincronizar='grupo2')
+ 
+Valores_numericos=pd.DataFrame({'Ejemplo':np.arange(0,60)})              
+html.addHtml('<hr align="LEFT" size="2" width="100%" color="Black" noshade>')
+
+html.addSerie("<p class='texto_centrado_negrita'>Valroes Numericos</p>",
+              dataframe=Valores_numericos)
+
               
-              
-# Mas tipos de opciones
+# Mas tipos de opciones, mas opciones: http://dygraphs.com/options.htm
 """
 opciones_grafico_02 = {'ylabel': "'Potencia (KW)'","colors": '["#303030", "#0099ff", "#ee2c2c", "#aa2c2c"]','observacion': "{ strokeWidth: 2,highlightCircleSize: 2}",
                        'valueRange': '[0,' + str(df_total.max().max() * 1.1) + ']',

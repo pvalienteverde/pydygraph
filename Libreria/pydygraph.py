@@ -11,17 +11,19 @@ from string import Template
 import pandas as pd
 import json
 from templates_html import templates_html
-from templates_html import axesXHTML
 import re
 import webbrowser
 import numpy as np
 import tempfile
 import time
-
+import os
 
 class DygraphChart(templates_html):
 
     def __init__(self, **kwargs):
+        
+        
+        
         """
         Constructor
         """
@@ -41,7 +43,17 @@ class DygraphChart(templates_html):
                                              'height': '400px'}
 
         self.__opciones_charts_default__ = {'showRangeSelector': 'true',
-                                            'legend': "'always'", }
+                                            'legend': "'always'"
+                                            }
+        self.__opciones_series_temporales__ = {'valueFormatter': 'Dygraph.dateString_',
+                                            'axisLabelFormatter': 'Dygraph.dateAxisFormatter',
+                                            'ticker': 'Dygraph.dateTicker'}
+        if 'ruta_archivo_css' in kwargs:
+            self.ruta_archivo_css = kwargs['ruta_archivo_css'].copy()
+        else:
+            abspath = os.path.abspath(__file__)
+            dname = os.path.dirname(abspath)
+            self.ruta_archivo_css = os.path.join(dname,'style.css')
 
     def addSerie(self, *args, **kwargs):
         """
@@ -85,8 +97,13 @@ class DygraphChart(templates_html):
         elif 'dataframe' in kwargs:
             kwargs['tipo_datos'] = self.pd2str(kwargs['dataframe'], index_timestamp=(
                 type(kwargs['dataframe'].index[0]) is pd.tslib.Timestamp))
+            
             opciones_usuario[
                 'labels'] = '["Indice","' + '","'.join(kwargs['dataframe'].columns.values) + '"]'
+                
+            if type(kwargs['dataframe'].index[0]) is pd.tslib.Timestamp:
+                opciones_usuario = dict (opciones_usuario.items() | self.__opciones_series_temporales__.copy().items())    
+                
         else:
             raise AssertionError("Se necesita alguna fuente de datos")
 
@@ -120,10 +137,10 @@ class DygraphChart(templates_html):
         more_opciones = ''
         # more_opciones+="""
         #        ,highlightSeriesOpts: {
-        #		  strokeWidth: 3,
-        #		  strokeBorderWidth: 1,
-        #		  highlightCircleSize: 5,
-        #		}
+        # 		  strokeWidth: 3,
+        # 		  strokeBorderWidth: 1,
+        # 		  highlightCircleSize: 5,
+        # 		}
         #         """
 
         cuerpo_js = Template(self.__template_js__)
@@ -237,7 +254,7 @@ class DygraphChart(templates_html):
         Creacion del HTML
         """
         cuerpo_html = Template(self.__template_html__)
-        return cuerpo_html.substitute(css=self.buildCSS(), contenedor=self.__contenedor__, js=self.buildJs())
+        return cuerpo_html.substitute(css=self.buildCSS(), contenedor=self.__contenedor__, js=self.buildJs(),ruta_archivo_css=self.ruta_archivo_css)
         
     @staticmethod
     def _in_ipynb():
@@ -258,66 +275,55 @@ class DygraphChart(templates_html):
         todo_html = self.buildHTML()         
         
         if (self._in_ipynb()):
-            from IPython.display import display,HTML
+            from IPython.display import display, HTML
             return display(HTML(todo_html))
         
         
-    def plotHTML(self,nombre_fichero=None):
+    def plotHTML(self, nombre_fichero=None):
         """
         plotear del HTML, sino se le pasa el nombre, se crea un fichero temporal
         """
         todo_html = self.buildHTML() 
             
-        fichero = tempfile.NamedTemporaryFile(delete=True,prefix='pydygraph_') if (nombre_fichero is None) else open(nombre_fichero, 'w')    
         
-        fichero.write(todo_html.encode('utf-8'))              
-        
+        if nombre_fichero is None:
+            fichero = tempfile.NamedTemporaryFile(delete=True, prefix='pydygraph_')
+            fichero.write(todo_html.encode('utf-8')) 
+        else:
+            fichero = open(nombre_fichero, 'w', encoding='utf-8')
+            fichero.write(todo_html)
+            
+            
         webbrowser.open_new_tab(fichero.name)
         
-        time.sleep(1);#Para que no se borre antes de abrirlo        
+        time.sleep(2);  # Para que no se borre antes de abrirlo        
         
         fichero.close()    
 
+    
     def pd2str(self, dataframe, index_timestamp=True):
         """
         Convierte dataframe al tipo requerido, EL indice debe de ser una fecha
         """
-        indice_fechas= pd.to_datetime(dataframe.index).map(lambda fecha : 'new Date("{}")'.format(fecha.strftime('%Y/%m/%d %H:%M:%S'))) if index_timestamp else dataframe.index.values
-        datos=np.column_stack((indice_fechas,dataframe.get_values()))
+                
+        dataframe.insert(0, 'index_para_json', dataframe.index)
+        datos_serializados_json = dataframe.to_json(orient="values")
+        del dataframe['index_para_json']    
+            
+        return datos_serializados_json
         
-        #np.apply_along_axis(lambda fila: "[{}],".format(','.join(map(str,fila))).replace('nan', 'NaN'),1,a)            
-        str_data = '['
-        for linea_de_datos in datos:
-            str_data += "[{}],\n".format(','.join(map(str,linea_de_datos))).replace('nan', 'NaN')
-
-        str_data += ']'
-
-        return  str_data
+    
 
 
     def dictOpciones2str(self, diccionario):
         regex = re.compile("^{(.*)}$")  # Quitamos corchetes de inicio y fin
         opciones = regex.search(str(diccionario)).groups()[0]
-        resultado=opciones.replace("'", '').replace('u["', '["')
+        resultado = opciones.replace("'", '').replace('u["', '["')
         return resultado
 
     def dictAtributos2str(self, diccionario):
-        resultado= json.dumps(diccionario).replace('{', '').replace('}', '').replace('"', '').replace(',', ';')
+        resultado = json.dumps(diccionario).replace('{', '').replace('}', '').replace('"', '').replace(',', ';')
         return resultado
-
-''' Diferentes utilies para pandas:'''
-# Ayuda a unir de diferentes diccionarios, el valor de un mismo resultado
-
-
-def joinN2(array_of_claves, dict_of_hash, clave):
-    dicc = dict()
-    for cod in array_of_claves:
-        if len(dicc):
-            dicc = dicc.join(
-                dict_of_hash[cod][[clave]].rename(columns={clave: cod}), how='outer')
-        else:
-            dicc = dict_of_hash[cod][[clave]].rename(columns={clave: cod})
-    return dicc
 
 
 ''' Para devolver un obejto cuando se lanza '''
